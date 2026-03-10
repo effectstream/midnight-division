@@ -1,0 +1,26 @@
+pragma language_version >= 0.21.0;
+
+import CompactStandardLibrary;
+
+// Division in ZK circuits:
+// The witness computes quotient and remainder off-chain.
+// The circuit verifies: q * divisor + r == dividend  AND  r < divisor.
+
+witness wit_div(): [Uint<64>, Uint<64>];
+
+// `div` returns [quotient, remainder]
+// Where: dividend / divisor = quotient + remainder
+//        remainder < divisor
+export circuit div(dividend: Uint<64>, divisor: Uint<64>): [Uint<64>, Uint<64>] {
+  const d: Uint<64> = disclose(dividend);
+  const p: Uint<64> = disclose(divisor);
+
+  assert(p > 0, "divisor must be positive");
+
+  const [q, r]: [Uint<64>, Uint<64>] = wit_div();
+
+  assert(q * p + r == d, "quotient * divisor + remainder != dividend");
+  assert(r < p,          "remainder >= divisor");
+
+  return [disclose(q), disclose(r)];
+}
