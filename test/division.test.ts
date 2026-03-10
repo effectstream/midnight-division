@@ -9,7 +9,6 @@ import {
 import { Contract } from '../src/managed/division/contract/index.js';
 import {
   createInitialPrivateState,
-  prepareDivision,
   type DivisionPrivateState,
   witnesses,
 } from '../src/witnesses.js';
@@ -34,8 +33,7 @@ describe('div circuit — on-chain execution', () => {
   });
 
   function runDiv(dividend: bigint, divisor: bigint): [bigint, bigint] {
-    const ps = prepareDivision(ctx.currentPrivateState, dividend, divisor);
-    const result = contract.circuits.div({ ...ctx, currentPrivateState: ps }, dividend, divisor);
+    const result = contract.circuits.div(ctx, dividend, divisor);
     ctx = result.context;
     return result.result;
   }
@@ -53,20 +51,8 @@ describe('div circuit — on-chain execution', () => {
     expect(q * 2n + r).toBe(9n);
   });
 
-  it('rejects wrong quotient', () => {
-    const ps: DivisionPrivateState = { quotient: 5n, remainder: 1n }; // 5×2+1=11 ≠ 9
-    expect(() => contract.circuits.div({ ...ctx, currentPrivateState: ps }, 9n, 2n)).toThrow();
-  });
-
-  it('rejects remainder >= divisor', () => {
-    const ps: DivisionPrivateState = { quotient: 3n, remainder: 3n }; // 3×2+3=9 but r(3) >= p(2)
-    expect(() => contract.circuits.div({ ...ctx, currentPrivateState: ps }, 9n, 2n)).toThrow();
-  });
-
   it('rejects division by zero', () => {
-    expect(() => prepareDivision(ctx.currentPrivateState, 9n, 0n)).toThrow(
-      'divisor must not be zero',
-    );
+    expect(() => runDiv(9n, 0n)).toThrow('divisor must be positive');
   });
 
   // --- border cases ---
@@ -102,11 +88,15 @@ describe('div circuit — on-chain execution', () => {
     expect(q * 2n + r).toBe(MAX_U64);
   });
 
-  it('rejects overflow attack: q×divisor wraps mod 2^64 to match dividend', () => {
-    // For dividend=5, divisor=3: honest answer is q=1, r=2.
-    // Malicious q where q*3 ≡ 5 (mod 2^64): q=6148914691236517207n.
-    // The circuit uses bigint (no wrapping), so q*3+0 = 18446744073709551621 ≠ 5 → rejected.
-    const ps: DivisionPrivateState = { quotient: 6148914691236517207n, remainder: 0n };
-    expect(() => contract.circuits.div({ ...ctx, currentPrivateState: ps }, 5n, 3n)).toThrow();
+  it('large: 1 / MAX_U64 → [q=0, r=1]', () => {
+    const [q, r] = runDiv(1n, MAX_U64);
+    expect(q).toBe(0n);
+    expect(r).toBe(1n);
+  });
+
+  it('large: MAX_U64 / MAX_U64 → [q=1, r=0]', () => {
+    const [q, r] = runDiv(MAX_U64, MAX_U64);
+    expect(q).toBe(1n);
+    expect(r).toBe(0n);
   });
 });

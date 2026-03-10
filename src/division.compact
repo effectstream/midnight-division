@@ -6,7 +6,7 @@ import CompactStandardLibrary;
 // The witness computes quotient and remainder off-chain.
 // The circuit verifies: q * divisor + r == dividend  AND  r < divisor.
 
-witness wit_div(): [Uint<64>, Uint<64>];
+witness wit_div(dividend: Uint<64>, divisor: Uint<64>): [Uint<64>, Uint<64>];
 
 // `div` returns [quotient, remainder]
 // Where: dividend / divisor = quotient + remainder
@@ -17,7 +17,7 @@ export circuit div(dividend: Uint<64>, divisor: Uint<64>): [Uint<64>, Uint<64>] 
 
   assert(p > 0, "divisor must be positive");
 
-  const [q, r]: [Uint<64>, Uint<64>] = wit_div();
+  const [q, r]: [Uint<64>, Uint<64>] = wit_div(d, p);
 
   assert(q * p + r == d, "quotient * divisor + remainder != dividend");
   assert(r < p,          "remainder >= divisor");
