@@ -35,7 +35,7 @@ npm test
 
 
 ### Tests
-
+```
  ✓ test/division.test.ts (11)
    ✓ div circuit — on-chain execution (11)
      ✓ exact: 10 / 2 → [q=5, r=0]
@@ -49,3 +49,4 @@ npm test
      ✓ large: MAX_U64 / 1 → [q=MAX_U64, r=0]
      ✓ large: MAX_U64 / 2 → correct q and r=1
      ✓ rejects overflow attack: q×divisor wraps mod 2^64 to match dividend# midnight-division
+```
